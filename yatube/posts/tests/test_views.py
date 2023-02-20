@@ -1,11 +1,9 @@
 from django import forms
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import Group, Post
-
-User = get_user_model()
+from ..models import Group, Post, User
 
 
 class PostPagesTests(TestCase):
@@ -30,12 +28,19 @@ class PostPagesTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def check_post_info(self, post):
+    def check_post_info(self, context):
         """Проверка информации в POST"""
+        page_obj = context.get('page_obj')
+        if page_obj is not None:
+            self.assertGreater(len(page_obj), 0)
+            post = page_obj[0]
+        else:
+            post = context.get('post')
         with self.subTest(post=post):
+            self.assertIsInstance(post, Post)
             self.assertEqual(post.text, self.post.text)
             self.assertEqual(post.author, self.post.author)
-            self.assertEqual(post.group.id, self.post.group.id)
+            self.assertEqual(post.group, self.post.group)
 
     def test_forms_show_correct(self):
         """Проверка коректности формы."""
@@ -47,7 +52,7 @@ class PostPagesTests(TestCase):
             with self.subTest(reverse_page=reverse_page):
                 response = self.authorized_client.get(reverse_page)
                 self.assertIsInstance(
-                    response.context['form'].fields['text'],
+                    response.context.get('form').fields.get('text'),
                     forms.fields.CharField)
                 self.assertIsInstance(
                     response.context['form'].fields['group'],
@@ -56,7 +61,7 @@ class PostPagesTests(TestCase):
     def test_index_page_show_correct_context(self):
         """Шаблон index.html сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse('posts:index'))
-        self.check_post_info(response.context['page_obj'][0])
+        self.check_post_info(response.context)
 
     def test_groups_page_show_correct_context(self):
         """Шаблон group_list.html сформирован с правильным контекстом."""
@@ -66,7 +71,7 @@ class PostPagesTests(TestCase):
                 kwargs={'slug': self.group.slug})
         )
         self.assertEqual(response.context['group'], self.group)
-        self.check_post_info(response.context['page_obj'][0])
+        self.check_post_info(response.context)
 
     def test_profile_page_show_correct_context(self):
         """Шаблон profile.html сформирован с правильным контекстом."""
@@ -75,7 +80,7 @@ class PostPagesTests(TestCase):
                 'posts:profile',
                 kwargs={'username': self.user.username}))
         self.assertEqual(response.context['author'], self.user)
-        self.check_post_info(response.context['page_obj'][0])
+        self.check_post_info(response.context)
 
     def test_detail_page_show_correct_context(self):
         """Шаблон post_detail.html сформирован с правильным контекстом."""
@@ -83,7 +88,7 @@ class PostPagesTests(TestCase):
             reverse(
                 'posts:post_detail',
                 kwargs={'post_id': self.post.id}))
-        self.check_post_info(response.context['post'])
+        self.check_post_info(response.context)
 
 
 class PaginatorViewsTest(TestCase):
@@ -99,19 +104,21 @@ class PaginatorViewsTest(TestCase):
             slug='test_slug',
             description='Тестовое описание группы',
         )
-        for i in range(13):
-            Post.objects.create(
-                text=f'Пост #{i}',
-                author=cls.user,
-                group=cls.group
-            )
+        cls.posts = [
+            Post(author=cls.user,
+                 text=f'Пост #{i}',
+                 group=cls.group
+                 )
+            for i in range(13)
+        ]
+        Post.objects.bulk_create(cls.posts)
 
     def setUp(self):
         self.unauthorized_client = Client()
 
     def test_paginator_on_pages(self):
         """Проверка пагинации на страницах."""
-        posts_on_first_page = 10
+        posts_on_first_page = settings.COUNT_ON_PAGE
         posts_on_second_page = 3
         url_pages = [
             reverse('posts:index'),
