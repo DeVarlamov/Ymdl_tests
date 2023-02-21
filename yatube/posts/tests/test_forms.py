@@ -78,7 +78,7 @@ class PostFormTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': post.id})
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        post = Post.objects.latest('id')
+        post.refresh_from_db()
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.author, self.post_author)
         self.assertEqual(post.group_id, form_data['group'])
