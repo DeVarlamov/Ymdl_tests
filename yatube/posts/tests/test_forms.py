@@ -28,6 +28,7 @@ class PostFormTests(TestCase):
 
     def test_authorized_user_create_post(self):
         """Проверка создания записи авторизированным клиентом."""
+        posts_count = Post.objects.count()
         form_data = {
             'text': 'Текст поста',
             'group': self.group.id,
@@ -43,8 +44,8 @@ class PostFormTests(TestCase):
                 'posts:profile',
                 kwargs={'username': self.post_author.username})
         )
-        self.assertEqual(Post.objects.count(), 1)
-        post = Post.objects.all()[0]
+        self.assertEqual(Post.objects.count(), posts_count + 1)
+        post = Post.objects.latest('id')
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.author, self.post_author)
         self.assertEqual(post.group_id, form_data['group'])
@@ -77,7 +78,7 @@ class PostFormTests(TestCase):
             reverse('posts:post_detail', kwargs={'post_id': post.id})
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        post.refresh_from_db()
+        post = Post.objects.latest('id')
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.author, self.post_author)
         self.assertEqual(post.group_id, form_data['group'])

@@ -2,6 +2,7 @@ from django import forms
 from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
+from posts.forms import PostForm
 
 from ..models import Group, Post, User
 
@@ -54,6 +55,8 @@ class PostPagesTests(TestCase):
                 self.assertIsInstance(
                     response.context.get('form').fields.get('text'),
                     forms.fields.CharField)
+                self.assertIsInstance(
+                    response.context.get('form'), PostForm)
                 self.assertIsInstance(
                     response.context['form'].fields['group'],
                     forms.fields.ChoiceField)
