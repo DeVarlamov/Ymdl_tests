@@ -7,7 +7,7 @@
       <div class="card-header">{% if is_edit %}Редактировать запись{% else %}Добавить запись{% endif %}</div>
       <div class="card-body">
          {% include 'includes/error_forms.html' %}
-         <form method="post" action="{{ request.get_full_path }}">
+         <form method="post" enctype="multipart/form-data" action="{{ request.get_full_path }}">
           {% csrf_token %}
           {% include 'includes/forms_field.html' %}
           <div class="d-flex justify-content-end">

@@ -6,7 +6,12 @@ SECRET_KEY = 'y8+g#w7^$6zkfnumlnx*&$!%zdroeb4a9qn_uq_h9a@g%rcobi'
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '[::1]',
+    'testserver',
+]
 
 
 INSTALLED_APPS = [
@@ -20,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'about',
+    'sorl.thumbnail',
 ]
 
 MIDDLEWARE = [
@@ -99,6 +105,8 @@ ALLOWED_HOSTS = [
     'testserver',
 ]
 
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+
 COUNT_ON_PAGE = 10
 
 LOGIN_URL = 'users:login'
@@ -106,3 +114,6 @@ LOGIN_REDIRECT_URL = 'posts:index'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
