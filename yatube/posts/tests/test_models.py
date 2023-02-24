@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ..models import Group, Post, User
+from ..models import Comment, Group, Post, User
 
 
 class PostModelTest(TestCase):
@@ -71,4 +71,40 @@ class GroupModelTest(TestCase):
         for value, expected in field_verboses.items():
             with self.subTest(value=value):
                 verbose_name = self.group._meta.get_field(value).verbose_name
+                self.assertEqual(verbose_name, expected)
+
+
+class CommentModelTest(TestCase):
+    """Создание фикстур для проверки коментариев"""
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='Merlin Menson')
+        cls.post = Post.objects.create(
+            text='Тестовый пост',
+            author=cls.user,
+        )
+        cls.comment = Comment.objects.create(
+            text='Тестовый коментари',
+            author=cls.user,
+            post=cls.post,
+        )
+
+    def test_сomment_str(self):
+        """Проверка __str__ у сomment."""
+        self.assertEqual(self.comment.text[:10], str(self.comment))
+
+    def test_сomment_verbose_name(self):
+        """Проверка verbose_name у сomment."""
+        field_verboses = {
+            'post': 'Пост',
+            'author': 'Автор',
+            'text': 'Коментарий',
+            'created': 'Создан',
+            'updated': 'Обнавлен',
+            'active': 'Активен',
+        }
+        for value, expected in field_verboses.items():
+            with self.subTest(value=value):
+                verbose_name = self.comment._meta.get_field(value).verbose_name
                 self.assertEqual(verbose_name, expected)

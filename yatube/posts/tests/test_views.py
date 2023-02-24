@@ -3,6 +3,7 @@ import tempfile
 
 from django import forms
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -125,6 +126,22 @@ class PostPagesTests(TestCase):
                 kwargs={'post_id': self.post.id}))
         self.check_post_info(response.context)
 
+    def test_cache_index_page(self):
+        """Проверка работы кеша"""
+        post = Post.objects.create(
+            text='Тестовый кэш',
+            author=self.user)
+        content_add = self.authorized_client.get(
+            reverse('posts:index')).content
+        post.delete()
+        content_delete = self.authorized_client.get(
+            reverse('posts:index')).content
+        self.assertEqual(content_add, content_delete)
+        cache.clear()
+        content_cache_clear = self.authorized_client.get(
+            reverse('posts:index')).content
+        self.assertNotEqual(content_add, content_cache_clear)
+
 
 class PaginatorViewsTest(TestCase):
     """Создание фикстур для паджинатора"""
@@ -150,6 +167,7 @@ class PaginatorViewsTest(TestCase):
 
     def setUp(self):
         self.unauthorized_client = Client()
+        self.unauthorized_client.force_login(self.user)
 
     def test_paginator_on_pages(self):
         """Проверка пагинации на страницах."""
@@ -162,6 +180,7 @@ class PaginatorViewsTest(TestCase):
         ]
         for reverse_ in url_pages:
             with self.subTest(reverse_=reverse_):
+                
                 self.assertEqual(len(self.unauthorized_client.get(
                     reverse_).context.get('page_obj')),
                     posts_on_first_page

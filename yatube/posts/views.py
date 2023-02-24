@@ -1,11 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.vary import vary_on_cookie
+from django.views.decorators.cache import cache_page
+
 
 from posts.forms import CommentForm, PostForm
 from .models import Post, Group, User
 from .utils import get_page
 
-
+@cache_page(20, key_prefix='index_page')
+@vary_on_cookie
 def index(request):
     """Выводит шаблон главной страницы"""
     post_list = Post.objects.select_related('group', 'author')
